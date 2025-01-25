@@ -13,8 +13,11 @@ class MainViewModel : ViewModel() {
         const val TAG = "MainViewModel"
     }
 
-    private val _countDownFlow = MutableStateFlow(0)
-    val countDownFlow = _countDownFlow.asStateFlow()
+    private val _countdownFlow = MutableStateFlow(0)
+    val countdownFlow = _countdownFlow.asStateFlow()
+
+    private val _isCountdownComplete = MutableStateFlow(false)
+    val isCountdownComplete = _isCountdownComplete.asStateFlow()
 
     private var isCountingDown = false
 
@@ -24,14 +27,16 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             isCountingDown = true
-            _countDownFlow.value = timeInSeconds
+            _isCountdownComplete.value = false
+            _countdownFlow.value = timeInSeconds
 
-            while (_countDownFlow.value > 0) {
+            while (_countdownFlow.value > 0) {
                 delay(1000L)  // Wait for 1 second
-                _countDownFlow.value -= 1
+                _countdownFlow.value -= 1
             }
 
             isCountingDown = false
+            _isCountdownComplete.value = true
         }
     }
 }

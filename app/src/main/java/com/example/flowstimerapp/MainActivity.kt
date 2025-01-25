@@ -1,5 +1,6 @@
 package com.example.flowstimerapp
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,9 +23,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,17 +45,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.flowstimerapp.ui.theme.FlowsTimerAPpTheme
+import com.example.flowstimerapp.utils.VibrationHelper
 import com.example.flowstimerapp.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
+    @SuppressLint("ServiceCast")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val vibrationHelper = VibrationHelper(this)
+
         setContent {
             FlowsTimerAPpTheme {
                 var userValue by remember { mutableStateOf("") }
                 val viewModel = viewModel<MainViewModel>()
-                val time = viewModel.countDownFlow.collectAsState(initial = 0)
+                val time = viewModel.countdownFlow.collectAsState(initial = 0)
+                val isTimerComplete = viewModel.isCountdownComplete.collectAsState()
+                val snackBarHostState = remember { SnackbarHostState() }
+
+                LaunchedEffect(isTimerComplete.value) {
+                    if (isTimerComplete.value) {
+                        vibrationHelper.vibrateOnComplete()
+
+                        snackBarHostState.showSnackbar(
+                            message = "Timer Completed",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
 
                 //Animation State
                 val rotation = rememberInfiniteTransition()
@@ -63,7 +86,21 @@ class MainActivity : ComponentActivity() {
                 )
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = Color(0xFF1A1A1A) // Dark background
+                    containerColor = Color(0xFF1A1A1A), // Dark background
+                    snackbarHost = {
+                        SnackbarHost(
+                            hostState = snackBarHostState,
+                            snackbar = { snackBarData ->
+                                Snackbar(
+                                    snackbarData = snackBarData,
+                                    containerColor = Color(0xFF83DEE8), // Background color
+                                    contentColor = Color.Black,  // Text color
+                                    actionColor = Color.White,   // Action button color
+                                    dismissActionContentColor = Color.White, // Dismiss action color
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            })
+                    }
                 ) { innerPadding ->
                     Box(
                         modifier = Modifier
